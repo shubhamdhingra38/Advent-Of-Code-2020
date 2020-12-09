@@ -49,10 +49,45 @@ def debug(**kwargs):
 Solution starts here
 """
 
+def has_sum(x, q):
+    for i in range(len(q)):
+        for j in range(len(q)):
+            if i == j: continue
+            if q[i] + q[j] == x: return True
+
+    return False
 
 def solve() -> None:
+    preamble = 25
     with open('./day9.txt') as f:
         contents = f.read()
+    q = deque()
+    num = -1
+    for idx, line in enumerate(contents.split('\n')):
+        i = int(line)
+        if idx >= preamble:
+            if not has_sum(i, q):
+                print(i)
+                num = i
+                break
+            q.popleft()
+            q.append(i)
+        else:
+            q.append(i)
+
+
+    if num != -1:
+        s = 0
+        lst = deque()
+        for idx, line in enumerate(contents.split('\n')):
+            if s == num and len(lst) >= 2:
+                print(max(lst) + min(lst))
+                break
+            i = int(line)
+            s += i
+            lst.append(i)
+            while s > num and len(lst) != 0:
+                s -= lst.popleft()
 
 
 
