@@ -59,8 +59,8 @@ def is_valid(i, j, seating):
 
 def how_many_occupied(i, j, seating):
     cnt = 0
-    for x in dx:
-        for y in dy:
+    for x in [1, 0, -1]:
+        for y in [1, 0, -1]:
             f = False
             if x == y and x == 0:
                 continue
@@ -117,7 +117,7 @@ def solve() -> None:
     print(res)
 
 
-t = read_i()
+t = 1
 for _ in range(t):
     solve()
 
