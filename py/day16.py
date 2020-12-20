@@ -44,130 +44,97 @@ def debug(**kwargs):
 Solution starts here
 
 """
-
-is_valid = ddict(bool)
-good_tickets = []
-ticket_rules = ddict(list)
-my_ticket = ''
-def extract_valid(string):
-    res = re.findall(r'\d+-\d+', string)
-
-    name = string.split(':')[0]
-    for ranges in res:
-        first, second = map(int, ranges.split('-'))
-        for i in range(first, second+1):
-            is_valid[i] = True
-        ticket_rules[name].append((first, second))
+dx = dy = dz = [1, -1, 0]
 
 
+
+
+def do_for(d_new, d_old, z):
+    mat = d_old[z]
+    for i in range(len(mat)):
+        sub_mat = mat[i]
+        for j in range(len(sub_mat)):
+            ele = sub_mat[j]
+            cnt = 0
+            for x_delta in dx:
+                for y_delta in dy:
+                    for z_delta in dz:
+                        if x_delta == y_delta == z_delta == 0: continue
+                        #neighbor
+                        x = i+x_delta
+                        y = j+y_delta
+                        z = z+z_delta
+
+                        if z not in d_old:
+                            d_new[z] = ddict(ddict)
+                            d_old[z] = ddict(ddict)
+                        if x not in d_old[z]:
+                            d_new[z][x] = ddict(ddict)
+                            d_old[z][x] = ddict(ddict)
+                        if y not in d_old[z][x]:
+                            d_new[z][x][y] = '.'
+                            d_old[z][x][y] = '.'
+                        if d_old[z][x][y] == '#':
+                            cnt += 1
+            if ele == '#':
+                if cnt == 2 or cnt == 3:
+                    continue
+                else:
+                    d_new[z][i][j] = '.'
+
+            else:
+                if cnt == 3:
+                    d_new[z][i][j] = '#'
+
+def pprint_dict(d):
+    print('+'*10)
+    for k in d:
+        for x in d[k].values():
+            print(x, end = ' ')
+        print()
+    print('+'*10)
 
 
 
 def solve_1() -> None:
-    global my_ticket
     contents = ''
-    with open('./day16.txt') as f:
+    with open('./day17.txt') as f:
         contents = f.read()
-    splitted = contents.split('\n\n')
-    rules = splitted[0].split('\n')
-    for rule in rules:
-        extract_valid(rule)
+    mat = [list(x) for x in contents.split('\n')[:-1]]
+    d = ddict(ddict)
+    d[0] = ddict(ddict)
+    for i in range(len(mat)):
+        if i not in d[0]:
+            d[0][i] = ddict(ddict)
+        for j in range(len(mat[0])):
+            if j not in d[0][i]:
+                d[0][i][j] = '.'
+            d[0][i][j] = mat[i][j]
+    for i in range(6):
+        keys = list(d.keys())
+        d_before = deepcopy(d)
+        for k in keys:
+            do_for(d, d_before, k)
+        for k in d:
+            print('z is', k)
+            pprint_dict(d[k])
+    c = 0
 
-    my_ticket = splitted[1]
-    other_tickets = splitted[2]
-    other_tickets = other_tickets.split('\n')[1:-1]
-
-    _sum = 0
-    for ticket in other_tickets:
-        ticket_split = list(map(int, ticket.split(',')))
-        good = True
-        for num in ticket_split:
-            if not is_valid[num]:
-                _sum += num
-                good = False
-        if good:
-            good_tickets.append(list(ticket_split))
+    for z in d:
+        for i in d[z]:
+            for j in d[z][i].values():
+                if j == '#':
+                    c += 1
+    print(c)
 
 
-def lies_inside(x, tuple_ranges):
-    r1, r2 = tuple_ranges
-    return r1[0] <= x <= r1[1] or r2[0] <= x <= r2[1]
 
 def solve_2() -> None:
-    global my_ticket
     contents = ''
     with open('./day16.txt') as f:
         contents = f.read()
-    my_ticket = list(map(int, my_ticket.split('\n')[1].split(',')))
-    good_tickets.append(my_ticket)
-    possible = []
-    for i in range(len(ticket_rules)):
-        possible.append(set())
-    for rule_name in ticket_rules:
-        for i in range(len(ticket_rules)):
-            possible[i].add(rule_name)
-
-
-    for ticket in good_tickets:
-        for idx, num in enumerate(ticket):
-            valid_possible_rules = deepcopy(possible[idx])
-            for rule in valid_possible_rules:
-                ranges = ticket_rules[rule]
-                if lies_inside(num, ranges):
-                    continue
-                else:
-                    if rule in possible[idx]:
-                        possible[idx].remove(rule)
-
-
-
-    considered = ddict(bool)
-    while True:
-        good = True
-        got = ''
-        for possibility in possible:
-            if len(possibility) == 1:
-                #this must be for this rule, remove it from other
-                here = list(possibility)[0]
-                if considered[here]: continue
-                else:
-                    considered[here] = True
-                    got = here
-                    break
-        for possibility in possible:
-            if len(possibility) != 1:
-                good = False
-                break
-        if good:
-            break
-        else:
-            assert got != ''
-            print('got', got)
-            for possibility in possible:
-                if len(possibility) != 1:
-                    if got in possibility:
-                        possibility.remove(got)
-
-
-
-    for i in range(len(ticket_rules)):
-        print('+' * 50)
-        print('For rule', i+1)
-        for x in possible[i]:
-            print(x)
-
-    #beautiful ugly code
-    res = 1
-    for i in range(len(ticket_rules)):
-        assert len(possible[i]) == 1
-        what = list(possible[i])[0]
-        if what.startswith('departure'):
-            res *= my_ticket[i]
-    print(res)
-
 
 t = 1
 for _ in range(t):
     solve_1()
-    solve_2()
 

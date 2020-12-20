@@ -64,18 +64,44 @@ impl Scanner{
 fn eval_helper(operands: &mut Vec::<i64>, operations: &mut Vec::<char>) -> i64 {
     operations.reverse();
     operands.reverse();
-    while operands.len() != 1 {
-        let first = operands.pop().unwrap();
-        let second = operands.pop().unwrap();
-        let op = operations.pop().unwrap();
-        if op == '*' {
-            operands.push(first * second);
-        }
-        else {
-            operands.push(first + second);
+
+    println!("{:?}", operations);
+    println!("{:?}", operands);
+
+    let mut has_plus = false;
+    for op in operations.iter() {
+        if *op == '+' {
+            has_plus = true;
+            break;
         }
     }
-    operands.pop().unwrap()
+    let mut res: i64 = 1;
+    if !has_plus {
+        while operands.len() != 0 {
+            let first = operands.pop().unwrap();
+            res *= first;
+        }
+    } else {
+        println!("has a plus");
+        let mut others = Vec::new();
+        for i in 0..operands.len() {
+            if i != operands.len() -1 && operations[i] == '+' {
+                let prev = operands[i];
+                let next = operands[i+1];
+                operands[i+1] = prev + next;
+            }
+            else {
+                others.push(operands[i]);
+            }
+        }
+        println!("{:?} others", others);
+        while others.len() != 0 {
+            let first = others.pop().unwrap();
+            res *= first;
+        }
+    }
+    println!("{}", res);
+    res
 }
 
 fn evalute_expression(s: &str) -> i64 {
@@ -112,7 +138,6 @@ fn evalute_expression(s: &str) -> i64 {
                     v.reverse(); u.reverse();
                     let num = eval_helper(&mut v, &mut u);
                     operands.push(num);
-                    // println!("resulted in {}", num);
                     break;
                 }
                 else {
