@@ -2,21 +2,20 @@
 #![allow(unused_imports)]
 #![allow(unused_variables)]
 
-use std::io::stdin;
 use std::cmp;
-use std::collections::HashMap;
 use std::collections::BinaryHeap;
+use std::collections::HashMap;
+use std::collections::HashSet;
 use std::fs;
+use std::io::stdin;
 use std::time::{Duration, Instant};
 
-
-
 #[derive(Default)] //initializes everything in struct with default value
-struct Scanner{
+struct Scanner {
     buffer: Vec<String>,
 }
-impl Scanner{
-    fn next<T: std::str::FromStr>(&mut self) -> T{
+impl Scanner {
+    fn next<T: std::str::FromStr>(&mut self) -> T {
         loop {
             if let Some(token) = self.buffer.pop() {
                 return token.parse::<T>().ok().expect("Failed parsing");
@@ -24,7 +23,7 @@ impl Scanner{
             let mut input = String::new();
             stdin().read_line(&mut input).expect("Failed reading");
             let input = input.split_whitespace().rev();
-            for token in input{
+            for token in input {
                 self.buffer.push(token.to_string());
             }
         }
@@ -35,7 +34,7 @@ impl Scanner{
     fn read_bigint(&mut self) -> i64 {
         self.next::<i64>()
     }
- 
+
     fn read_string(&mut self) -> String {
         self.next::<String>()
     }
@@ -61,129 +60,102 @@ impl Scanner{
         res
     }
 }
-fn eval_helper(operands: &mut Vec::<i64>, operations: &mut Vec::<char>) -> i64 {
-    operations.reverse();
-    operands.reverse();
 
-    println!("{:?}", operations);
-    println!("{:?}", operands);
 
-    let mut has_plus = false;
-    for op in operations.iter() {
-        if *op == '+' {
-            has_plus = true;
-            break;
-        }
-    }
-    let mut res: i64 = 1;
-    if !has_plus {
-        while operands.len() != 0 {
-            let first = operands.pop().unwrap();
-            res *= first;
-        }
-    } else {
-        println!("has a plus");
-        let mut others = Vec::new();
-        for i in 0..operands.len() {
-            if i != operands.len() -1 && operations[i] == '+' {
-                let prev = operands[i];
-                let next = operands[i+1];
-                operands[i+1] = prev + next;
+
+fn parse_rule(line: &str) -> (usize, Vec<&str>) {
+    let mut element = line.split(":").into_iter();
+    let rule_num = element.next().expect("error no next").parse::<usize>().expect("parse error");
+    let rule = element.next().expect("error no next").split(" ");
+    let mut rules = Vec::new();
+    for r in rule {
+        if r.len() != 0 {
+            if r.starts_with("\"") {
+                let r = r.strip_prefix("\"").unwrap().strip_suffix("\"").unwrap();
+                rules.push(r);
             }
             else {
-                others.push(operands[i]);
+                rules.push(r);
             }
         }
-        println!("{:?} others", others);
-        while others.len() != 0 {
-            let first = others.pop().unwrap();
-            res *= first;
-        }
     }
-    println!("{}", res);
-    res
+
+    println!("rule is {:?} with num {}", rules, rule_num);
+    (rule_num, rules)
 }
 
-fn evalute_expression(s: &str) -> i64 {
+fn satisfies_rule(rule: &Vec<&str>, line: &str) -> bool{
+    println!("checking if {} satisfy rule {:?}", line, rule);
+    if rule.contains(&"|") {
+        //a | b type
+    }
+    else {
+        if rule.len() == 1 {
+            assert_eq!(rule[0].len(), 1);
+            let c = rule[0].chars().next().unwrap();
+            
+        }
+    }
+    true
+}
 
-    let mut operations = Vec::new();
-    let mut operands = Vec::new();
-    let mut res = 0;
-    let mut itr = s.chars();
-    let mut was_reading_int = false;
-    let mut int_str = String::new();
-    for c in itr {
-        // println!("{:?}", operands);
-        // println!("{:?}", operations);
-        if !c.is_digit(10) {
-            if was_reading_int {
-                let num = int_str.parse::<i64>().expect("error parsing");
-                int_str.clear();
-                operands.push(num);
-                was_reading_int = false;
-            }
-        }
-        if c == '(' {
-            operations.push(c);
-        }
-        else if c == ')' {
-            int_str.clear();
-            let mut v = Vec::new();
-            let mut u = Vec::new();
-            loop{
-                let chr = operations.pop().expect("stack empty");
-                if chr == '('{
-                    let n1 = operands.pop().unwrap();
-                    v.push(n1);
-                    v.reverse(); u.reverse();
-                    let num = eval_helper(&mut v, &mut u);
-                    operands.push(num);
-                    break;
+fn is_valid_str(line: &str, rules: &HashMap<usize, Vec<&str>>) -> bool{
+    println!("checking line: {}", line);
+
+    let base_rule = rules.get(&0).unwrap();
+    let mut i = 0;
+    let mut string_idx = 0;
+    while i < base_rule.len() {
+        let ele = base_rule[i];
+        match ele.parse::<usize>() {
+            Ok(e) => {
+                let rule = rules.get(&e).unwrap();
+                if satisfies_rule(rule, &line[string_idx..]){
+                    println!("YES!");
+                    i += 1;
                 }
                 else {
-                    let n1 = operands.pop().unwrap();
-                    v.push(n1);
-                    u.push(chr);
+                    return false;
                 }
-            }
-            int_str.clear();
-        }
-        else if c == '+' || c == '*' {
-            operations.push(c);
-        }
-        else if c.is_digit(10) {
-            int_str.push(c);
-            was_reading_int = true;
+            },
+            Err(err) => {panic!(err);}
         }
     }
-    if was_reading_int {
-        let num = int_str.parse::<i64>().expect("error parsing");
-        int_str.clear();
-        operands.push(num);
-        was_reading_int = false;
-    }
-
- 
-    // println!("{} length of operands", operands.len());
-    eval_helper(&mut operands, &mut operations)
+    true
 }
 
 fn main() {
     // let mut scanner = Scanner::default();
     let now = Instant::now();
-    let mut contents = fs::read_to_string("inp.txt")
-            .expect("Something went wrong reading the file");
-        
-    let mut splitted = contents.split("\n");
-    let mut res: i64 = 0;    
-    for line in splitted {
-        res += evalute_expression(line);
+    let mut contents =
+        fs::read_to_string("inp.txt").expect("Something went wrong reading the file");
+    
+    let splitted_itr = contents.split("\n").into_iter();
+
+    let mut rules = HashMap::new();
+    let mut processing_rules = true;
+    let mut good_cnt = 0;
+    for line in splitted_itr {
+        if line.len()==0{
+            //seperator, rules are now over
+            processing_rules = false;
+        }
+        else {
+            if processing_rules {
+                let (x, y) = parse_rule(line);
+                rules.insert(x, y);
+            }
+            else {
+                //processing strings for validity
+                if is_valid_str(line, &rules) {
+                    good_cnt += 1;
+                }
+            }
+        }
     }
-    println!("{}", res);
+
     println!("{} time elapsed", now.elapsed().as_millis());
-
 }
-
 
 //reading causes strings to end with either \n or \n\r
 fn trim_newline(s: &mut String) {
@@ -195,9 +167,9 @@ fn trim_newline(s: &mut String) {
     }
 }
 
-fn gcd(a: i64, b: i64) -> i64{
+fn gcd(a: i64, b: i64) -> i64 {
     if b == 0 {
         return a;
     }
-    return gcd(b, a%b);
+    return gcd(b, a % b);
 }
